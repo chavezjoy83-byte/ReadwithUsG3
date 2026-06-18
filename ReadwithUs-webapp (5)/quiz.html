@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#961313">
+    <meta name="description" content="A mobile-friendly vocabulary quiz for ReadwithUs.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ReadwithUs - Vocabulary Quiz</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { 
+            background: url("https://images.stockcake.com/public/c/d/a/cda0dc0a-97a1-489e-9dbe-268aaf096c9e_large/infinite-library-portal-stockcake.jpg") center/cover scroll; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .quiz-card { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 40px; 
+            border-radius: 25px; 
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 10px rgba(255, 255, 255, 0.5); 
+            width: min(100%, 450px); 
+            max-width: 100%;
+            margin: 20px;
+            box-sizing: border-box;
+        }
+
+        #score-display { font-size: clamp(2.5rem, 8vw, 4rem); color: rgb(152, 13, 13); font-weight: bold; margin: 20px 0; text-shadow: 0 0 10px rgba(152,13,13,0.3); }
+
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 15px; 
+            margin: 10px 0; 
+            background: white; 
+            color: rgb(152, 13, 13); 
+            border: 2px solid rgb(152, 13, 13); 
+            border-radius: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-sizing: border-box;
+        }
+
+        .btn:hover { 
+            background: rgb(152, 13, 13); 
+            color: white; 
+            box-shadow: 0 0 15px rgba(152, 13, 13, 0.6); 
+            transform: scale(1.02); 
+        }
+
+        .correct { background: #28a745 !important; color: white !important; border-color: #28a745 !important; }
+        .wrong { background: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
+        .hidden { display: none; }
+        h2 { color: rgb(152, 13, 13); margin-bottom: 20px; word-break: break-word; }
+
+        @media (max-width: 760px) {
+            body { padding: 18px; align-items: flex-start; }
+            .quiz-card { padding: 24px; margin: 12px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card" id="quiz-box">
+    <h2 id="question">Loading...</h2>
+    <div style="margin-bottom:16px;">
+        <span id="user-name" style="color:#333; font-weight:bold;">Player: Anonymous</span>
+        <button id="edit-name-btn" class="btn" style="display:inline-block; width:auto; margin-left:8px; padding:6px 10px; font-size:14px;">Edit</button>
+        <div id="name-edit" style="display:none; margin-top:8px;">
+            <input id="name-input" type="text" placeholder="Enter name" style="padding:8px; border-radius:8px; width:220px;"> 
+            <button id="save-name" class="btn" style="width:auto; display:inline-block; padding:8px 12px; margin-left:8px;">Save</button>
+        </div>
+    </div>
+    <div id="options"></div>
+</div>
+
+<div class="quiz-card hidden" id="result-box">
+    <h2>Quiz Finished!</h2>
+    <div id="score-display">0</div>
+    <p id="result-text">Great Job!</p>
+    <a href="index.html" class="btn" style="text-decoration: none;">Back to Main Page</a>
+</div>
+
+<script>
+    const quizData = [
+        { word: "Lovely", options: ["Beautiful", "Ugly", "Small"], correct: "Beautiful" },
+        { word: "Beautiful", options: ["Pretty", "Old", "Slow"], correct: "Pretty" },
+        { word: "Nature", options: ["Buildings", "Environment", "Cars"], correct: "Environment" },
+        { word: "Lush", options: ["Dry", "Green growth", "Cold"], correct: "Green growth" },
+        { word: "Crystal clear", options: ["Transparent", "Dirty", "Hard"], correct: "Transparent" },
+        { word: "Country", options: ["Nation", "House", "Room"], correct: "Nation" },
+        { word: "Warm gestures", options: ["Friendly", "Anger", "Running"], correct: "Friendly" },
+        { word: "Celebration", options: ["Party", "Work", "Sleeping"], correct: "Party" },
+        { word: "Destroy", options: ["Build", "Ruin", "Fix"], correct: "Ruin" },
+        { word: "Recover", options: ["Get better", "Lose", "Cry"], correct: "Get better" },
+        { word: "Damages", options: ["Harm", "Health", "Food"], correct: "Harm" },
+        { word: "Diverse culture", options: ["Same", "Variety of traditions", "None"], correct: "Variety of traditions" },
+        { word: "Diverse place", options: ["Many features", "One thing", "Empty"], correct: "Many features" },
+        { word: "Locals", options: ["Tourists", "Residents", "Animals"], correct: "Residents" },
+        { word: "Geography", options: ["Study of Earth", "Math", "Cooking"], correct: "Study of Earth" }
+    ];
+
+    let current = 0, score = 0;
+
+    function loadQuestion() {
+        if(current < quizData.length) {
+            let q = quizData[current];
+            document.getElementById("question").innerText = "What is the meaning of: " + q.word + "?";
+            let optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            q.options.forEach(opt => {
+                let b = document.createElement("button");
+                b.className = "btn"; 
+                b.innerText = opt;
+                b.onclick = () => check(opt, b);
+                optionsDiv.appendChild(b);
+            });
+        } else {
+            showResult();
+        }
+    }
+
+    function check(choice, btn) {
+        if(choice === quizData[current].correct) { 
+            btn.className = "btn correct"; 
+            score++; 
+        } else { 
+            btn.className = "btn wrong"; 
+        }
+        
+        document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+        setTimeout(() => { current++; loadQuestion(); }, 600);
+    }
+
+    function showResult() {
+        document.getElementById("quiz-box").classList.add("hidden");
+        document.getElementById("result-box").classList.remove("hidden");
+        document.getElementById("score-display").innerText = score + "/" + quizData.length;
+        
+        // I-save sa localStorage kasama ang "Wayground Quiz" label
+        let records = JSON.parse(localStorage.getItem('quizRecords') || "[]");
+        records.push({
+            name: localStorage.getItem('currentUser') || document.getElementById('name-input').value || "Anonymous",
+            code: localStorage.getItem('currentUserCode') || '',
+            activity: "Wayground Quiz",
+            score: score + "/" + quizData.length,
+            date: new Date().toLocaleDateString()
+        });
+        localStorage.setItem('quizRecords', JSON.stringify(records));
+        
+        if(score >= 12) confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function showUserName() {
+        let name = localStorage.getItem('currentUser') || 'Anonymous';
+        document.getElementById('user-name').innerText = 'Player: ' + name;
+        document.getElementById('name-input').value = name === 'Anonymous' ? '' : name;
+    }
+
+    function initQuiz() {
+        showUserName();
+        document.getElementById('edit-name-btn').addEventListener('click', () => {
+            document.getElementById('name-edit').style.display = 'block';
+            document.getElementById('name-input').focus();
+        });
+
+        document.getElementById('save-name').addEventListener('click', () => {
+            let v = (document.getElementById('name-input').value || '').trim();
+            if (v) {
+                localStorage.setItem('currentUser', v);
+                const code = localStorage.getItem('currentUserCode');
+                if (code) {
+                    try {
+                        const registry = JSON.parse(localStorage.getItem('studentCodes') || '{}');
+                        registry[code] = v;
+                        localStorage.setItem('studentCodes', JSON.stringify(registry));
+                    } catch (e) {}
+                }
+                document.getElementById('user-name').innerText = 'Player: ' + v;
+                document.getElementById('name-edit').style.display = 'none';
+            } else {
+                alert('Please enter a name');
+            }
+        });
+
+        loadQuestion();
+    }
+
+    document.addEventListener('DOMContentLoaded', initQuiz());
+</script>
+
+</body>
+</html>

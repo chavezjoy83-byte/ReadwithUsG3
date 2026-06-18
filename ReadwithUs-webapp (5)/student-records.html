@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Records</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #fce4ec; }
+        .box { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>My Progress: <span id="userName"></span></h1>
+    <table>
+        <thead><tr><th>Activity</th><th>Date</th><th>Score</th></tr></thead>
+        <tbody id="studentTableBody"></tbody>
+    </table>
+    <br><a href="index.html">Back to Home</a>
+</div>
+<script>
+    const user = localStorage.getItem('currentUser');
+    // Bawal pumasok dito ang admin
+    if(!user || user === 'admin123') window.location.href = 'login.html';
+    document.getElementById('userName').innerText = user;
+
+    const records = JSON.parse(localStorage.getItem('quizRecords') || "[]");
+    const tbody = document.getElementById('studentTableBody');
+    
+    // I-filter ang records base sa pangalan ng student
+    records.filter(r => r.name === user).forEach(r => {
+        tbody.innerHTML += `<tr><td>${r.activity}</td><td>${r.date}</td><td>${r.score}</td></tr>`;
+    });
+</script>
+</body>
+</html>

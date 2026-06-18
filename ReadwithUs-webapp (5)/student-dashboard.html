@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#961313">
+    <title>My Quiz Records</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f4f4f9; margin: 0; box-sizing: border-box; }
+        .dashboard { max-width: 800px; margin: auto; background: white; padding: 28px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+        h1 { color: rgb(152, 13, 13); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 14px; text-align: left; }
+        th { background-color: rgb(152, 13, 13); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <a href="index.html">&larr; Back to Home</a>
+    <h1>My Quiz Records</h1>
+    <p>Viewing records for: <strong id="displayName"></strong></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Activity</th>
+                <th>Date</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    function loadMyRecords() {
+        // 1. Kunin ang pangalan ng kasalukuyang user
+        const currentUser = localStorage.getItem('currentUser');
+        document.getElementById("displayName").innerText = currentUser || "Anonymous";
+
+        // 2. Kunin ang lahat ng records
+        const allRecords = JSON.parse(localStorage.getItem('quizRecords') || "[]");
+        let tableBody = document.getElementById("tableBody");
+        tableBody.innerHTML = "";
+
+        // 3. I-filter ang records: ipakita lang kung ang name ay kapareho ng currentUser
+        const myRecords = allRecords.filter(student => student.name === currentUser);
+
+        if (myRecords.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No records found for you yet.</td></tr>";
+            return;
+        }
+
+        // 4. I-render ang filtered records
+        myRecords.forEach((student) => {
+            let row = tableBody.insertRow(-1);
+            row.innerHTML = `
+                <td>${student.activity}</td>
+                <td>${student.date}</td>
+                <td style="font-weight: bold;">${student.score}</td>
+            `;
+        });
+    }
+
+    // Patakbuhin pag-load ng page
+    loadMyRecords();
+</script>
+
+</body>
+</html>

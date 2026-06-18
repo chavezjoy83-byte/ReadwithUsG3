@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#961313">
+    <meta name="description" content="View your own quiz and activity scores on ReadwithUs.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>My Records - ReadwithUs</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f4f4f9; margin: 0; box-sizing: border-box; }
+        .dashboard { max-width: 800px; margin: auto; background: white; padding: 28px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); box-sizing: border-box; }
+        .toolbar { margin-bottom: 6px; }
+        .toolbar a { color: rgb(152, 13, 13); text-decoration: none; font-weight: 700; }
+        h1 { color: rgb(152, 13, 13); margin-top: 14px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; min-width: 460px; }
+        th, td { border: 1px solid #ddd; padding: 14px; text-align: left; }
+        th { background-color: rgb(152, 13, 13); color: white; }
+        th:nth-child(3), td:nth-child(3) { text-align: center; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .empty-state { text-align: center; color: #777; }
+        @media (max-width: 760px) {
+            body { padding: 16px; }
+            .dashboard { padding: 18px; }
+            table, th, td { font-size: 13px; }
+            th, td { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="toolbar"><a href="index.html">&larr; Back to Home</a></div>
+    <h1>My Records</h1>
+    <p>Viewing scores for: <strong id="displayName"></strong></p>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Activity</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function loadMyRecords() {
+        const currentUser = localStorage.getItem('currentUser');
+
+        // Kung walang naka-sign in, bumalik sa Home para mag sign in
+        if (!currentUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        document.getElementById('displayName').innerText = currentUser;
+
+        const currentCode = localStorage.getItem('currentUserCode');
+        const allRecords = JSON.parse(localStorage.getItem('quizRecords') || "[]");
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = "";
+
+        // Itugma muna base sa code (mas tiyak kung magkapareho ang pangalan ng ibang estudyante);
+        // kung walang code sa record (lumang entry bago ang code system), itugma sa pangalan
+        const myRecords = allRecords.filter(r => {
+            if (currentCode && r.code) return r.code === currentCode;
+            return r.name === currentUser;
+        });
+
+        if (myRecords.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='3' class='empty-state'>No records yet. Try the Drill to see your score here!</td></tr>";
+            return;
+        }
+
+        myRecords.forEach(r => {
+            const row = tableBody.insertRow(-1);
+            row.innerHTML = `
+                <td>${r.activity}</td>
+                <td>${r.date}</td>
+                <td>${r.score}</td>
+            `;
+        });
+    }
+
+    loadMyRecords();
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('sw.js').catch(function() {});
+        });
+    }
+</script>
+</body>
+</html>

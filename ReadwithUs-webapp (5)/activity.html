@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Communal Values Poem Activity</title>
+    <style>
+        /* Cute Aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background-color: #fce4ec; 
+            color: #5d4037;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .room-selection { margin-bottom: 30px; }
+        .room { 
+            display: inline-block; 
+            padding: 18px; 
+            margin: 10px; 
+            cursor: pointer; 
+            background-color: #ffffff;
+            border: 3px solid #f8bbd0; 
+            border-radius: 20px; 
+            width: 150px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .room:hover { background-color: #f8bbd0; color: white; }
+        .hidden { display: none; }
+        
+        .word-bank { 
+            background: #ffffff; 
+            padding: 20px; 
+            border-radius: 20px; 
+            margin: 20px auto; 
+            width: min(100%, 500px);
+            border: 2px dashed #f48fb1;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        textarea { 
+            width: min(100%, 520px); 
+            height: 140px; 
+            border-radius: 15px; 
+            padding: 15px; 
+            border: 2px solid #f8bbd0;
+            font-family: inherit;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        button {
+            margin-top: 15px; 
+            padding: 14px 30px; 
+            border-radius: 20px; 
+            border: none; 
+            background-color: #ec407a; 
+            color: white; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+        button:hover { background-color: #d81b60; }
+
+        .home-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 12px 22px;
+            border-radius: 20px;
+            background: #8e24aa;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+        .home-btn:hover { background: #6a1b9a; }
+
+        #output { 
+            border: 3px solid #ffd54f; 
+            padding: 20px; 
+            margin-top: 20px; 
+            min-height: 50px; 
+            background: #fffde7; 
+            display: inline-block; 
+            width: min(100%, 520px); 
+            border-radius: 20px;
+            transition: 0.5s;
+            white-space: pre-wrap;
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        @media (max-width: 760px) {
+            .room { width: calc(50% - 28px); }
+            .word-bank, textarea, #output { width: 100%; }
+            button, .home-btn { width: 100%; min-width: unset; }
+            body { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Room Selection -->
+    <div id="selection-screen" class="room-selection">
+        <h1>✨ Welcome! Please select your room ✨</h1>
+        <div class="room" onclick="enterRoom('Group 1')">Group 1</div>
+        <div class="room" onclick="enterRoom('Group 2')">Group 2</div>
+    </div>
+
+    <!-- Activity Area -->
+    <div id="activity-screen" class="hidden">
+        <h1 id="room-title"></h1>
+        <p><strong>Instruction:</strong> Create your own poem about <b>Communal Values</b> using any of the words below:</p>
+        <a href="index.html" class="home-btn">Home</a>
+        <div class="word-bank">
+            <strong>Word Bank:</strong><br>
+            <i>Lovely, beautiful, nature, lush, crystal clear, country, warm gestures, celebration, destroy, recover, damages, diverse culture, diverse place, locals, geography</i>
+        </div>
+
+        <textarea id="poemInput" placeholder="Write your lovely poem here..."></textarea><br>
+        <button onclick="savePoem()">SAVE POEM</button>
+
+        <h3>Result (Lighting Container):</h3>
+        <div id="output">Your poem will appear here once saved!</div>
+    </div>
+
+    <script>
+        let currentGroup = null;
+
+        function enterRoom(groupName) {
+            document.getElementById('selection-screen').classList.add('hidden');
+            document.getElementById('activity-screen').classList.remove('hidden');
+            document.getElementById('room-title').innerText = "Welcome to " + groupName;
+            currentGroup = groupName;
+            loadSavedPoem();
+        }
+
+        function loadSavedPoem() {
+            const output = document.getElementById('output');
+            const saved = localStorage.getItem('groupPoem_' + currentGroup);
+            output.style.boxShadow = "none";
+            output.style.borderColor = "#ffd54f";
+            if (saved) {
+                document.getElementById('poemInput').value = saved;
+                output.innerText = saved;
+            } else {
+                document.getElementById('poemInput').value = '';
+                output.innerText = 'Your poem will appear here once saved!';
+            }
+        }
+
+        function savePoem() {
+            const poem = document.getElementById('poemInput').value;
+            const output = document.getElementById('output');
+            
+            if(poem.trim() === "") {
+                alert("Please write a poem first!");
+                return;
+            }
+
+            output.innerText = poem;
+            localStorage.setItem('groupPoem_' + currentGroup, poem);
+            
+            // "Lighting" effect
+            output.style.boxShadow = "0 0 30px #ffd54f";
+            output.style.borderColor = "#ffca28";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#961313">
+    <meta name="description" content="A mobile-friendly interactive reading and vocabulary website.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ReadwithUs</title>
+    <style>
+        body {
+            position: relative;
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #111;
+            overflow-x: hidden;
+            background-color: #3a1414;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background-image: url("https://images.stockcake.com/public/c/d/a/cda0dc0a-97a1-489e-9dbe-268aaf096c9e_large/infinite-library-portal-stockcake.jpg");
+            background-size: cover;
+            background-position: center;
+            filter: blur(12px);
+            z-index: -1;
+        }
+
+        .content-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 22px;
+            border-radius: 18px;
+            max-width: 600px;
+            width: min(100%, 560px);
+            text-align: center;
+            transition: 0.4s;
+            border: 2px solid transparent;
+            margin-bottom: 24px;
+            box-sizing: border-box;
+        }
+
+        .content-box:hover {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgb(152, 13, 13);
+        }
+
+        h1 {
+            color: rgb(152, 13, 13);
+            margin-top: 0;
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+        }
+
+        .content-box p {
+            margin: 0;
+            line-height: 1.6;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 100%;
+            padding: 13px 16px;
+            border-radius: 14px;
+            border: 2px solid #f0d6d6;
+            font-size: 16px;
+            font-family: inherit;
+            box-sizing: border-box;
+            margin-top: 4px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: rgb(152, 13, 13);
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .nav-btn {
+            padding: 14px 20px;
+            font-size: 16px;
+            background-color: rgb(152, 13, 13);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            max-width: 100%;
+            min-height: 52px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .nav-btn:hover {
+            background-color: white;
+            color: rgb(152, 13, 13);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            transform: scale(1.02);
+        }
+        .hidden { display: none; }
+
+        .teacher-link {
+            color: #555;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+        }
+
+        .code-hint {
+            color: #777;
+            font-size: 0.85rem;
+            margin: 10px 0 6px;
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 16px; }
+            .content-box { padding: 18px; }
+            .button-container { gap: 14px; }
+            .nav-btn { padding: 14px 16px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="content-box" id="introBox">
+        <h1>ReadwithUs</h1>
+        <p>ReadwithUs is an interactive, web-based educational tool currently under development to support literacy and reading comprehension.</p>
+    </div>
+
+    <div class="content-box" id="loginSection">
+        <div id="codeStep">
+            <p class="code-hint">Enter your student code (1-100):</p>
+            <input type="text" id="studentCode" inputmode="numeric" placeholder="e.g. 23" autofocus onkeydown="if (event.key === 'Enter') checkCode()">
+            <p id="codeStatus" style="color:#961313; font-weight:600; margin-top:8px;"></p>
+            <button type="button" class="nav-btn" onclick="checkCode()">Continue</button>
+        </div>
+
+        <div id="nameStep" class="hidden">
+            <p id="newCodeMsg" class="code-hint"></p>
+            <input type="text" id="studentName" placeholder="Enter your name (press Enter or click Sign In)..." onkeydown="if (event.key === 'Enter') saveStudent()">
+            <p id="status" style="color:#333; font-weight:600; margin-top:8px;"></p>
+            <button type="button" class="nav-btn" onclick="saveStudent()">Student Sign In</button>
+        </div>
+
+        <p class="teacher-link" onclick="checkTeacher()">Teacher Access</p>
+    </div>
+
+    <div class="content-box hidden" id="menuSection">
+        <h1 id="welcomeUser">Welcome!</h1>
+        <p class="teacher-link" onclick="editName()">Not you? Edit name</p>
+        <p id="menuText">Choose an activity to begin learning.</p>
+        <div class="button-container">
+            <a href="flashcards.html" class="nav-btn">Flashcard</a>
+            <a href="quiz.html" class="nav-btn">Drill</a>
+            <a href="lesson.html" class="nav-btn">Lesson Proper</a>
+            <a href="poem.html" class="nav-btn">Philippine Poem</a>
+            <a href="activity.html" class="nav-btn">Group Activity</a>
+            <a href="my-records.html" class="nav-btn">My Records</a>
+        </div>
+        <button type="button" class="nav-btn" onclick="signOut()">Sign Out</button>
+    </div>
+
+    <button id="installButton" class="nav-btn hidden" onclick="promptInstall()">Install ReadwithUs</button>
+    <script>
+        let deferredPrompt;
+        const CODE_MIN = 1;
+        const CODE_MAX = 100;
+        let pendingCode = null;
+
+        function getRegistry() {
+            try { return JSON.parse(localStorage.getItem('studentCodes') || '{}'); }
+            catch (e) { return {}; }
+        }
+
+        function saveRegistry(reg) {
+            localStorage.setItem('studentCodes', JSON.stringify(reg));
+        }
+
+        function normalizeCode(raw) {
+            const n = parseInt(String(raw).trim(), 10);
+            if (isNaN(n) || n < CODE_MIN || n > CODE_MAX) return null;
+            return String(n);
+        }
+
+        function checkCode() {
+            const input = document.getElementById('studentCode');
+            const code = normalizeCode(input.value);
+            const codeStatus = document.getElementById('codeStatus');
+
+            if (!code) {
+                codeStatus.innerText = 'Invalid code. Please enter a number from ' + CODE_MIN + ' to ' + CODE_MAX + ', or ask your teacher.';
+                return;
+            }
+
+            codeStatus.innerText = '';
+            pendingCode = code;
+            const registry = getRegistry();
+
+            if (registry[code]) {
+                // Kilala na ang code na ito, derecho na sa menu, walang paulit-ulit na pagsagot
+                finishSignIn(code, registry[code]);
+            } else {
+                // Unang gamit ng code na ito, tanungin lang ng isang pagkakataon ang pangalan
+                document.getElementById('codeStep').classList.add('hidden');
+                document.getElementById('nameStep').classList.remove('hidden');
+                document.getElementById('newCodeMsg').innerText = 'Code ' + code + ': first time using this code, please enter your name.';
+                document.getElementById('studentName').focus();
+            }
+        }
+
+        function saveStudent() {
+            const input = document.getElementById('studentName');
+            const name = (input.value || '').trim();
+            if (name === '') {
+                alert('Please enter your name!');
+                input.focus();
+                return;
+            }
+            try {
+                const registry = getRegistry();
+                registry[pendingCode] = name;
+                saveRegistry(registry);
+                finishSignIn(pendingCode, name);
+            } catch (err) {
+                alert('Could not save name to localStorage: ' + err.message);
+            }
+        }
+
+        function finishSignIn(code, name) {
+            try {
+                localStorage.setItem('currentUser', name);
+                localStorage.setItem('currentUserCode', code);
+                showMenu(name);
+            } catch (err) {
+                alert('Could not save sign-in info: ' + err.message);
+            }
+        }
+
+        function editName() {
+            const code = localStorage.getItem('currentUserCode');
+            const newName = prompt('Update your name:', localStorage.getItem('currentUser') || '');
+            if (newName && newName.trim()) {
+                const trimmed = newName.trim();
+                localStorage.setItem('currentUser', trimmed);
+                if (code) {
+                    const registry = getRegistry();
+                    registry[code] = trimmed;
+                    saveRegistry(registry);
+                }
+                showMenu(trimmed);
+            }
+        }
+
+        function signOut() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentUserCode');
+            showLogin();
+        }
+
+        function checkTeacher() {
+            const pass = prompt('Enter Teacher Access Code:');
+            if (pass === 'admin123') {
+                window.location.href = 'teacher-login.html';
+            } else {
+                alert('Invalid Code!');
+            }
+        }
+
+        function showMenu(name) {
+            const loginSection = document.getElementById('loginSection');
+            const menuSection = document.getElementById('menuSection');
+            const welcomeUser = document.getElementById('welcomeUser');
+            const menuText = document.getElementById('menuText');
+            loginSection.classList.add('hidden');
+            menuSection.classList.remove('hidden');
+            welcomeUser.innerText = 'Welcome, ' + (name || localStorage.getItem('currentUser') || 'Student') + '!';
+            menuText.innerText = 'Choose an activity to begin learning.';
+            document.getElementById('status').innerText = '';
+        }
+
+        function showLogin() {
+            const loginSection = document.getElementById('loginSection');
+            const menuSection = document.getElementById('menuSection');
+            loginSection.classList.remove('hidden');
+            menuSection.classList.add('hidden');
+            document.getElementById('codeStep').classList.remove('hidden');
+            document.getElementById('nameStep').classList.add('hidden');
+            document.getElementById('studentCode').value = '';
+            document.getElementById('studentName').value = '';
+            document.getElementById('codeStatus').innerText = '';
+            document.getElementById('status').innerText = '';
+            document.getElementById('studentCode').focus();
+        }
+
+        function initPage() {
+            const name = localStorage.getItem('currentUser');
+            if (name) {
+                showMenu(name);
+            } else {
+                showLogin();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initPage);
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            window.dispatchEvent(new CustomEvent('pwaInstallReady'));
+        });
+
+        window.addEventListener('load', function() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(function() {});
+            }
+        });
+
+        window.addEventListener('pwaInstallReady', function() {
+            const installBtn = document.getElementById('installButton');
+            if (installBtn) installBtn.classList.remove('hidden');
+        });
+
+        function promptInstall() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function() {
+                deferredPrompt = null;
+                const installBtn = document.getElementById('installButton');
+                if (installBtn) installBtn.classList.add('hidden');
+            });
+        }
+    </script>
+</body>
+</html>

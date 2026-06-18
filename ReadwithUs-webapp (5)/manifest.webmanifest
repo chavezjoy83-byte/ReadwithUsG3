@@ -1,0 +1,22 @@
+{
+  "name": "ReadwithUs",
+  "short_name": "ReadwithUs",
+  "description": "A mobile-friendly reading and vocabulary learning website.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#961313",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ]
+}
