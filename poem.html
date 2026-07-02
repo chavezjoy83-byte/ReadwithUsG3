@@ -4,160 +4,428 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#961313">
+    <meta name="description" content="An interactive poem reading and comprehension activity optimized for mobile.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Philippines Poem Activity</title>
     <style>
         :root { --bg: #1a1a1a; --accent: #ffb7b2; }
-        body { background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; padding: 20px; box-sizing: border-box; }
-        .wrapper { position: relative; padding: 6px; border-radius: 26px; overflow: hidden; width: min(100%, 640px); background: #2d2d2d; }
-        .container { position: relative; width: 100%; padding: 40px; border-radius: 20px; text-align: center; }
-        .section { display: none; }
+        body { background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow-x: hidden; padding: 20px; box-sizing: border-box; }
+
+        .wrapper { position: relative; padding: 6px; border-radius: 26px; overflow: hidden; width: min(100%, 640px); }
+        .wrapper::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, var(--accent), transparent 30%);
+            animation: rotate 3s linear infinite; opacity: 0; transition: 0.5s;
+        }
+        .wrapper:hover::before { opacity: 1; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+        .container { position: relative; width: 100%; padding: 40px; border-radius: 20px; background: #2d2d2d; z-index: 1; text-align: center; box-sizing: border-box; }
+        .section { display: none; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .active { display: block; }
-        .poem-text { background: #333; padding: 18px; border-radius: 10px; margin: 16px 0; text-align: left; border-left: 5px solid var(--accent); line-height: 1.8; }
+
+        .poem-text { background: #333; padding: 18px; border-radius: 10px; margin: 16px 0; text-align: left; border-left: 5px solid var(--accent); line-height: 1.8; font-size: 1rem; }
+        .audio-btn { padding: 6px 10px; font-size: 0.95rem; margin-top: 4px; }
         .word-bank { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; justify-content: center; }
-        .word { padding: 10px 14px; background: var(--accent); color: #1a1a1a; cursor: grab; border-radius: 6px; font-weight: bold; }
-        .blank { border-bottom: 2px solid var(--accent); display: inline-block; min-width: 90px; color: #ffb7b2; font-weight: bold; margin: 4px; padding: 2px 6px; text-align: center; }
-        .picture-row { display: flex; align-items: center; gap: 10px; background: #333; padding: 10px; margin-bottom: 10px; border-radius: 12px; }
-        .picture-image { width: 100px; height: 60px; border-radius: 8px; overflow: hidden; border: 2px solid #fff; }
-        .picture-image img { width: 100%; height: 100%; object-fit: cover; }
-        .picture-target { flex: 1; min-height: 40px; border: 2px dashed var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
-        .btn { padding: 10px 16px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .word { padding: 10px 14px; background: var(--accent); color: #1a1a1a; cursor: grab; border-radius: 6px; font-weight: bold; transition: 0.2s; min-width: 90px; text-align: center; }
+        .word:active { opacity: 0.6; }
+        .blank { border-bottom: 2px solid var(--accent); display: inline-block; min-width: 90px; max-width: 140px; min-height: 28px; color: #ffb7b2; font-weight: bold; margin: 4px 4px; padding: 2px 6px; text-align: center; border-radius: 4px; word-break: break-word; }
+        .blank.dragover { background: rgba(255,183,178,0.2); }
+        .blank.correct { background: rgba(120,255,120,0.25); border-color: #78ff78; color: #78ff78; }
+        .blank.wrong { background: rgba(255,100,100,0.25); border-color: #ff6464; color: #ff6464; }
+        .picture-container { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+        .picture-row { display: flex; align-items: center; gap: 10px; background: #333; padding: 10px; border-radius: 12px; flex-wrap: wrap; }
+        .picture-image { width: 120px; min-width: 120px; height: 76px; overflow: hidden; border-radius: 12px; border: 2px solid #fff; flex-shrink: 0; }
+        .picture-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .picture-arrow { position: relative; width: 34px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+        .picture-arrow::before { content: ''; position: absolute; width: 2px; height: 70%; background: var(--accent); top: 15%; left: 50%; transform: translateX(-50%); }
+        .picture-arrow::after { content: '→'; position: relative; font-size: 18px; z-index: 1; }
+        .picture-target { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 80px; border: 2px dashed var(--accent); border-radius: 12px; background: rgba(255,183,178,0.05); padding: 10px; box-sizing: border-box; }
+        .picture-target.correct { border-color: #78ff78; background: rgba(120,255,120,0.12); color: #78ff78; }
+        .picture-target.wrong { border-color: #ff6464; background: rgba(255,100,100,0.12); color: #ff6464; }
+        .hidden { display: none; }
+        .btn { padding: 10px 16px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 8px 4px; font-size: 0.98rem; min-width: 140px; transition: 0.25s; }
+        .btn:hover { opacity: 0.95; }
+        input[type="file"].hidden-file { display: none; }
+        .btn + .btn { margin-left: 6px; }
+        .section .btn { margin-top: 8px; }
+        #result12, #result34, #result5 { margin-top: 15px; font-weight: bold; min-height: 24px; }
+        @media (max-width: 760px) {
+            body { padding: 16px; }
+            .wrapper { width: 100%; }
+            .container { padding: 24px; }
+            .picture-row { flex-direction: column; align-items: stretch; }
+            .picture-image, .picture-target { width: 100%; min-width: unset; }
+            .picture-arrow { display: none; }
+            .btn { width: 100%; margin-left: 0; max-width: 100%; }
+            input[type="text"] { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <div class="container">
+    <div class="container" id="mainContainer">
 
+        <!-- LESSON -->
         <div id="lesson" class="section active">
             <h1>Lesson: Poetry Analysis</h1>
-            <button class="btn" onclick="show('intro')">Start</button>
+            <p>Analyzing imagery and themes in literature.</p>
+            <button class="btn" onclick="startLesson()">Continue</button>
         </div>
 
-        <div id="intro" class="section">
-            <h1>PHILIPPINES</h1>
-            <p>Written by: Ma. Jhanicah Allaizza Yumul Vergara</p>
-            <button class="btn" onclick="show('stanzas12')">Continue</button>
-        </div>
+<!-- TITLE & AUTHOR -->
+<div id="intro" class="section">
+    <h1>PHILIPPINES</h1>
+    <p>Written by: Ma. Jhanicah Allaizza Yumul Vergara</p>
 
+    <div class="audio-container">
+        <audio id="audioIntro" controls preload="metadata" src="title-and-author-audio.mp3">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <button class="btn" onclick="show('lesson')">Back</button>
+    <button class="btn" onclick="show('stanzas12')">Continue</button>
+</div>
+
+        <!-- STANZAS 1 & 2 (reading) -->
         <div id="stanzas12" class="section">
             <h2>Stanza I & II</h2>
             <div class="poem-text">
                 Oh how lovely are you, my country!<br>How beautiful are your nature,<br>The lush green trees and grass,<br>And the crystal clear waters;<br><br>
                 Oh how lovely are you, my country!<br>The people's smiles and warm gestures;<br>The delicious food that serves on the table;<br>The colorful celebration of each town.
             </div>
+            <div class="audio-container">
+                <audio controls preload="metadata" src="stanza-1-2.mp3">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+            <button class="btn" onclick="show('intro')">Back</button>
             <button class="btn" onclick="show('stanzas34')">Continue</button>
         </div>
 
+        <!-- STANZAS 3 & 4 (reading) -->
         <div id="stanzas34" class="section">
             <h2>Stanza III & IV</h2>
             <div class="poem-text">
                 Oh how lovely are you, my country!<br>But what is happening to you?<br>The people destroy you, little by little<br>The nature is destroying you, little by little<br><br>
                 Oh how lovely are you, my country!<br>I wonder how will you recover?<br>From all the damages we've made;<br>My beloved Philippines, How lovely are you!
             </div>
-            <button class="btn" onclick="show('quiz12')">Proceed to Quiz</button>
+            <div class="audio-container">
+                <audio controls preload="metadata" src="stanza-3-4.mp3">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+            <button class="btn" onclick="show('stanzas12')">Back</button>
+            <button class="btn" onclick="show('stanza5')">Continue</button>
         </div>
 
+        <!-- STANZA 5 (reading) -->
+        <div id="stanza5" class="section">
+            <h2>Stanza V</h2>
+            <div class="poem-text">Diverse culture, Diverse place<br>Many locals and diverse entities.<br>But despite the geography,<br>We still come together as one family.</div>
+            <div class="audio-container">
+                <audio controls preload="metadata" src="stanza-5.mp3">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+            <button class="btn" onclick="show('stanzas34')">Back</button>
+            <button class="btn" onclick="show('getready')">Continue</button>
+        </div>
+
+        <!-- GET READY & INSTRUCTIONS -->
+        <div id="getready" class="section">
+            <h2>Get Ready!</h2>
+            <p><b>English:</b> Drag the correct word from the word bank into the matching blank to complete each stanza of the poem.</p>
+            <p><b>Tagalog:</b> I-drag ang tamang salita mula sa word bank patungo sa angkop na blangko upang mabuo ang bawat saknong ng tula.</p>
+            <button class="btn" onclick="show('stanza5')">Back</button>
+            <button class="btn" onclick="show('quiz12')">Start Quiz</button>
+        </div>
+
+        <!-- QUIZ: STANZA 1 & 2 (8 blanks) -->
         <div id="quiz12" class="section">
-            <h2>Quiz: Stanza I & II</h2>
+            <h2>Fill in the Blanks - Stanza I & II</h2>
             <div class="word-bank" id="wb12"></div>
             <div class="poem-text">
                 Oh how <span class="blank" data-answer="lovely" ondrop="drop(event)" ondragover="allow(event)"></span> are you, my <span class="blank" data-answer="country" ondrop="drop(event)" ondragover="allow(event)"></span>!<br>
                 How <span class="blank" data-answer="beautiful" ondrop="drop(event)" ondragover="allow(event)"></span> are your <span class="blank" data-answer="nature" ondrop="drop(event)" ondragover="allow(event)"></span>,<br>
                 The <span class="blank" data-answer="lush" ondrop="drop(event)" ondragover="allow(event)"></span> green trees and grass,<br>
-                And the <span class="blank" data-answer="crystal clear" ondrop="drop(event)" ondragover="allow(event)"></span> waters;<br>
-                The people's smiles and <span class="blank" data-answer="warm gestures" ondrop="drop(event)" ondragover="allow(event)"></span>;<br>
+                And the <span class="blank" data-answer="crystal clear" ondrop="drop(event)" ondragover="allow(event)"></span> waters;<br><br>
+                Oh how lovely are you, my country!<br>The people's smiles and <span class="blank" data-answer="warm gestures" ondrop="drop(event)" ondragover="allow(event)"></span>;<br>
+                The delicious food that serves on the table;<br>
                 The colorful <span class="blank" data-answer="celebration" ondrop="drop(event)" ondragover="allow(event)"></span> of each town.
             </div>
-            <button class="btn" onclick="checkAnswers('quiz12')">Check</button>
-            <button class="btn" onclick="show('pictureMatch')">Next Activity</button>
+            <button class="btn" onclick="checkAnswers('quiz12','result12','Philippines Poem - Stanza I & II')">Check Answers</button>
+            <div id="result12"></div>
+            <button class="btn" onclick="show('getready')">Back</button>
+            <button class="btn" onclick="show('quiz34')">Continue</button>
         </div>
 
+        <!-- QUIZ: STANZA 3 & 4 (3 blanks) -->
+        <div id="quiz34" class="section">
+            <h2>Fill in the Blanks - Stanza III & IV</h2>
+            <div class="word-bank" id="wb34"></div>
+            <div class="poem-text">
+                Oh how lovely are you, my country!<br>But what is happening to you?<br>
+                The people <span class="blank" data-answer="destroy" ondrop="drop(event)" ondragover="allow(event)"></span> you, little by little<br>
+                The nature is destroying you, little by little<br><br>
+                Oh how lovely are you, my country!<br>I wonder how will you <span class="blank" data-answer="recover" ondrop="drop(event)" ondragover="allow(event)"></span>?<br>
+                From all the <span class="blank" data-answer="damages" ondrop="drop(event)" ondragover="allow(event)"></span> we've made;<br>
+                My beloved Philippines, How lovely are you!
+            </div>
+            <button class="btn" onclick="checkAnswers('quiz34','result34','Philippines Poem - Stanza III & IV')">Check Answers</button>
+            <div id="result34"></div>
+            <button class="btn" onclick="show('quiz12')">Back</button>
+            <button class="btn" onclick="show('quiz5')">Continue</button>
+        </div>
+
+        <!-- QUIZ: STANZA 5 (4 blanks) -->
+        <div id="quiz5" class="section">
+            <h2>Fill in the Blanks - Stanza V</h2>
+            <div class="word-bank" id="wb5"></div>
+            <div class="poem-text">
+                <span class="blank" data-answer="diverse culture" ondrop="drop(event)" ondragover="allow(event)"></span>, <span class="blank" data-answer="diverse place" ondrop="drop(event)" ondragover="allow(event)"></span><br>
+                Many <span class="blank" data-answer="locals" ondrop="drop(event)" ondragover="allow(event)"></span> and diverse entities.<br>
+                But despite the <span class="blank" data-answer="geography" ondrop="drop(event)" ondragover="allow(event)"></span>,<br>
+                We still come together as one family.
+            </div>
+            <button class="btn" onclick="checkAnswers('quiz5','result5','Philippines Poem - Stanza V')">Check Answers</button>
+            <div id="result5"></div>
+            <button class="btn" onclick="show('quiz34')">Back</button>
+                <button class="btn" onclick="show('pictureMatch')">Continue</button>
+            </div>
+
+        <!-- PICTURE MATCH ACTIVITY -->
         <div id="pictureMatch" class="section">
             <h2>Picture Match Activity</h2>
-            <p><b>Instruction:</b> Drag the correct word from the word bank to the box next to the picture.</p>
-            <p><b>Tagalog:</b> I-drag ang tamang salita mula sa word bank sa kahon sa tabi ng larawan.</p>
-            <div id="pictureContainer"></div>
+            <p>Drag the correct word from the word bank to the box next to the picture. Correct answers turn green; incorrect answers turn red.</p>
+            <p>I-drag ang tamang salita mula sa word bank sa kahon sa tabi ng larawan. Ang tama ay magiging berde; ang mali ay magiging pula.</p>
+            <div class="picture-container" id="pictureContainer"></div>
             <h3>Word Bank</h3>
             <div class="word-bank" id="wbPic"></div>
             <button class="btn" onclick="checkPictureMatch()">Check Picture Match</button>
+            <div id="resultPic" style="margin-top:15px; font-weight:bold; min-height:24px;"></div>
+            <button class="btn" onclick="show('quiz5')">Back</button>
+            <a id="homeLink" class="btn hidden" href="index.html">Home</a>
         </div>
-
     </div>
 </div>
 
 <script>
     const wordSets = {
-        wb12: ["lovely", "country", "beautiful", "nature", "lush", "crystal clear", "warm gestures", "celebration"],
-        wbPic: ["lovely", "beautiful", "nature", "lush", "crystal clear", "country", "warm gestures", "celebration", "destroy", "recover", "damages", "diverse culture", "diverse place", "locals", "geography"]
+        wb12: ["Lovely", "country", "beautiful", "nature", "lush", "crystal clear", "warm gestures", "celebration"],
+        wb34: ["destroy", "recover", "damages"],
+        wb5:  ["diverse culture", "diverse place", "locals", "geography"],
+        wbPic: ["Lovely", "Beautiful", "Nature", "Lush", "Crystal Clear", "Country", "Warm Gestures", "Celebration", "Destroy", "Recover", "Damages", "Diverse Culture", "Diverse Place", "Locals", "Geography"]
     };
 
     const pictureData = [
-        { word: "lovely", img: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=500&q=80" },
-        { word: "beautiful", img: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=500&q=80" },
-        { word: "nature", img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=500&q=80" },
-        { word: "lush", img: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=500&q=80" },
-        { word: "crystal clear", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80" },
-        { word: "country", img: "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=500&q=80" },
-        { word: "warm gestures", img: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=500&q=80" },
-        { word: "celebration", img: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=500&q=80" },
-        { word: "destroy", img: "https://images.unsplash.com/photo-1596755094514-f87e34083b2c?auto=format&fit=crop&w=500&q=80" },
-        { word: "recover", img: "https://images.unsplash.com/photo-1584483766114-118b18567341?auto=format&fit=crop&w=500&q=80" },
-        { word: "damages", img: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=500&q=80" },
-        { word: "diverse culture", img: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=500&q=80" },
-        { word: "diverse place", img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?auto=format&fit=crop&w=500&q=80" },
-        { word: "locals", img: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=500&q=80" },
-        { word: "geography", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=500&q=80" }
+        { word: "Lovely", img: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=500&q=80" },
+        { word: "Beautiful", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=500&q=80" },
+        { word: "Nature", img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=500&q=80" },
+        { word: "Lush", img: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=500&q=80" },
+        { word: "Crystal Clear", img: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=500&q=80" },
+        { word: "Country", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80" },
+        { word: "Warm Gestures", img: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=500&q=80" },
+        { word: "Celebration", img: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=500&q=80" },
+        { word: "Destroy", img: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=500&q=80" },
+        { word: "Recover", img: "https://images.pexels.com/photos/302769/pexels-photo-302769.jpeg?auto=compress&cs=tinysrgb&w=500" },
+        { word: "Damages", img: "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg?auto=compress&cs=tinysrgb&w=500" },
+        { word: "Diverse Culture", img: "https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=500" },
+        { word: "Diverse Place", img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=500&q=80" },
+        { word: "Locals", img: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=500&q=80" },
+        { word: "Geography", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=500&q=80" }
     ];
 
+    let studentName = "Anonymous";
+
+    function initStudent() {
+        studentName = localStorage.getItem('currentUser') || "Anonymous";
+    }
+
+    function startLesson() {
+        show('intro');
+    }
+
+    initStudent();
+
+    function saveScore(activity, score, total) {
+        let records = JSON.parse(localStorage.getItem('quizRecords') || "[]");
+        records.push({
+            name: studentName,
+            code: localStorage.getItem('currentUserCode') || '',
+            activity: activity,
+            date: new Date().toLocaleString(),
+            score: score + " / " + total
+        });
+        localStorage.setItem('quizRecords', JSON.stringify(records));
+    }
+
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function buildPictureMatch() {
+        const container = document.getElementById('pictureContainer');
+        container.innerHTML = '';
+        pictureData.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'picture-row';
+            row.innerHTML = `
+                <div class="picture-image"><img src="${item.img}" alt="${item.word}"></div>
+                <div class="picture-arrow">→</div>
+                <div class="picture-target blank" data-answer="${item.word.toLowerCase()}" ondrop="drop(event)" ondragover="allow(event)"></div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
     function show(id) {
+        // stop any playing audio when changing sections
+        document.querySelectorAll('audio').forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    function allow(e) { e.preventDefault(); }
-    function drag(e) { e.dataTransfer.setData('text', e.target.innerText.toLowerCase()); }
-    function drop(e) { e.preventDefault(); e.target.innerText = e.dataTransfer.getData("text"); }
+    function allow(e) {
+        e.preventDefault();
+        e.target.classList.add('dragover');
+    }
+
+    function drag(e) { e.dataTransfer.setData('text', e.target.innerText); }
+
+    function drop(e) {
+        e.preventDefault();
+        e.target.classList.remove('dragover');
+        const word = e.dataTransfer.getData("text");
+
+        // if this blank already had a word, restore that chip
+        if (e.target.dataset.usedWord) {
+            restoreChip(e.target.dataset.usedWord);
+        }
+
+        e.target.innerText = word;
+        e.target.dataset.usedWord = word;
+        e.target.classList.remove('correct', 'wrong');
+
+        const expected = e.target.dataset.answer ? e.target.dataset.answer.toLowerCase() : '';
+        if (expected) {
+            if (word.trim().toLowerCase() === expected) {
+                e.target.classList.add('correct');
+            } else {
+                e.target.classList.add('wrong');
+            }
+        }
+
+        // hide the dragged chip
+        const chip = document.querySelector('.word[data-used="false"][data-word="' + cssEscape(word) + '"]');
+        if (chip) { chip.setAttribute('data-used', 'true'); chip.style.display = 'inline-block'; chip.style.display = 'none'; }
+    }
+
+    function restoreChip(word) {
+        const chip = document.querySelector('.word[data-word="' + cssEscape(word) + '"][data-used="true"]');
+        if (chip) { chip.setAttribute('data-used', 'false'); chip.style.display = 'inline-block'; }
+    }
+
+    function cssEscape(str) {
+        return str.replace(/(["\\])/g, '\\$1');
+    }
+
+    function checkAnswers(sectionId, resultId, activityName) {
+        const blanks = document.querySelectorAll('#' + sectionId + ' .blank');
+        let correct = 0;
+        blanks.forEach(b => {
+            const given = (b.innerText || "").trim().toLowerCase();
+            const expected = b.dataset.answer.toLowerCase();
+            b.classList.remove('correct', 'wrong');
+            if (given === expected) {
+                b.classList.add('correct');
+                correct++;
+            } else {
+                b.classList.add('wrong');
+            }
+        });
+        const result = document.getElementById(resultId);
+        result.innerText = "Score: " + correct + " / " + blanks.length + (correct === blanks.length ? "  🎉 Perfect!" : "  Try again!");
+        result.style.color = correct === blanks.length ? '#78ff78' : '#ff6464';
+        saveScore(activityName, correct, blanks.length);
+    }
 
     function checkPictureMatch() {
-        document.querySelectorAll('.picture-target').forEach(t => {
-            const val = t.innerText.toLowerCase().trim();
-            const ans = t.getAttribute('data-answer').toLowerCase();
-            t.style.backgroundColor = (val === ans) ? "rgba(120,255,120,0.3)" : "rgba(255,100,100,0.3)";
+        const blanks = document.querySelectorAll('#pictureMatch .blank');
+        let correct = 0;
+        blanks.forEach(b => {
+            const given = (b.innerText || "").trim().toLowerCase();
+            const expected = b.dataset.answer.toLowerCase();
+            b.classList.remove('correct', 'wrong');
+            if (given === expected) {
+                b.classList.add('correct');
+                correct++;
+            } else {
+                b.classList.add('wrong');
+            }
         });
+        const result = document.getElementById('resultPic');
+        result.innerText = "Score: " + correct + " / " + blanks.length + (correct === blanks.length ? "  🎉 Perfect!" : "  Check the red answers");
+        result.style.color = correct === blanks.length ? '#78ff78' : '#ff6464';
+        saveScore('Picture Match', correct, blanks.length);
+        document.getElementById('homeLink').classList.remove('hidden');
     }
 
-    function checkAnswers(id) {
-        document.querySelectorAll('#' + id + ' .blank').forEach(b => {
-            const val = b.innerText.toLowerCase().trim();
-            const ans = b.getAttribute('data-answer').toLowerCase();
-            b.classList.add(val === ans ? 'correct' : 'wrong');
-        });
-    }
+    
 
     window.onload = () => {
-        // Build Word Bank 12
-        const wb12 = document.getElementById('wb12');
-        wordSets.wb12.forEach(w => {
-            const div = document.createElement('div');
-            div.className = 'word'; div.draggable = true; div.innerText = w;
-            div.ondragstart = drag; wb12.appendChild(div);
+        buildPictureMatch();
+        for (const bankId in wordSets) {
+            const wb = document.getElementById(bankId);
+            if (!wb) continue;
+            shuffle(wordSets[bankId]).forEach(w => {
+                let div = document.createElement('div');
+                div.className = 'word';
+                div.draggable = true;
+                div.innerText = w;
+                div.dataset.word = w;
+                div.dataset.used = "false";
+                div.ondragstart = drag;
+                wb.appendChild(div);
+            });
+        }
+        // audio debug: log file URLs and play ability
+        document.querySelectorAll('audio').forEach(a => {
+            a.addEventListener('error', () => { console.error('Audio load failed for', a.id, 'src=', a.currentSrc || a.src); });
+            console.log('Audio', a.id, 'src=', a.currentSrc || a.src, 'canPlayType(mpeg)=', a.canPlayType('audio/mpeg'));
         });
-
-        // Build Picture Match
-        const container = document.getElementById('pictureContainer');
-        pictureData.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'picture-row';
-            row.innerHTML = `<div class="picture-image"><img src="${item.img}"></div><div class="picture-target" data-answer="${item.word}" ondrop="drop(event)" ondragover="allow(event)"></div>`;
-            container.appendChild(row);
-        });
-        const wb = document.getElementById('wbPic');
-        wordSets.wbPic.forEach(w => {
-            const div = document.createElement('div');
-            div.className = 'word'; div.draggable = true; div.innerText = w;
-            div.ondragstart = drag; wb.appendChild(div);
-        });
-    };
+    }
 </script>
+<script>
+    let deferredPrompt;
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('sw.js').catch(function() {});
+        });
+    }
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+    function promptInstall() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() {
+            deferredPrompt = null;
+        });
+    }
+</script>
+<script src="storage-manager.js"></script>
 </body>
 </html>
